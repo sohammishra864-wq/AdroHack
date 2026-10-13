@@ -1,0 +1,57 @@
+# --- secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*WITH_SECRETS*
+ClaimShield_authorisation_etc/
+authenticationa&authorisation/
+
+# --- large / generated (never in git) ---
+models/
+data/
+logs/
+reports/
+*.bench.*
+smoke_inpaint.png
+*.log
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.safetensors
+
+# --- python ---
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- frontend build output (see frontend/.gitignore too) ---
+node_modules/
+dist/
+
+# --- docs: only the root README.md is published ---
+*.md
+!/README.md
+/docs/
+*.txt
+!requirements.txt
+*.pdf
+further code 1/
+furthur implementation/
+excel/
+
+# --- editor / OS ---
+.vscode/
+.idea/
+
+.DS_Store
+Thumbs.db
