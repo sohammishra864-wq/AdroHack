@@ -1,0 +1,26 @@
+bands: {low_max: 0.35, medium_max: 0.65}
+quality_gate:
+  min_short_side_px: 256
+  min_est_jpeg_quality: 40
+  min_laplacian_var: 30
+  confidence_cap_when_flagged: 0.5
+abstain:
+  strong_evidence_signals: [c2pa, pdf_incremental_update, cross_claim]
+ae_reconstruction:   # score = sigmoid((center - LPIPS-2 distance) / scale); UNCALIBRATED until Phase 8
+  {confidence_cap: 0.7, input_px_cpu: 384, input_px_gpu: 512, center: 0.020, scale: 0.005}
+family_map: {unknown_below_maxprob: 0.60}
+face_match: {cosine_mismatch_below: 0.40}
+localizer: {impl: trufor, input_px: 768, reliability_min: 0.6, region_min_area_frac: 0.005}
+regions: {min_signals_to_show: 2}
+narrative: {llm_swap_timeout_s: 4}
+noise_residual: {block_px: 32, z_outlier: 3.5, min_cluster_frac: 0.02, max_texture_std: 12}
+copy_move: {min_matches: 8, min_shift_px: 24, ratio: 0.6}
+documents:
+  tax_rates: [0, 5, 12, 18, 28]   # GST slabs; a tax line at another rate is flagged
+  amount_tol_abs: 1.0             # rupees; arithmetic mismatch below this is rounding
+  amount_tol_rel: 0.001
+  ocr_dpi: 200
+  ocr_max_pages: 3
+  ocr_dip_below: 60               # tesseract word confidence; numeric words below this dip
+  font_rare_frac: 0.05            # a font used by < 5 % of chars, mostly digits → rogue
+  mod_after_create_days: 1
