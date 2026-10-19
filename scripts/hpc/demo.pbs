@@ -1,0 +1,32 @@
+#!/bin/bash
+# ClaimShield demo servers on one GPU node: FastAPI (claimshield/api.py) on :8000 and the
+# Streamlit reviewer UI on :8501. Submit from the repo root:  qsub scripts/hpc/demo.pbs
+# Node name → logs/demo_node.txt; reach both from the laptop through the login node:
+#   ssh -N -L 8000:<node>:8000 -L 8501:<node>:8501 <user>@<hpc-login>
+#PBS -N claimshield-demo
+#PBS -q gpu
+#PBS -l ngpus=1
+#PBS -l walltime=06:00:00
+#PBS -j oe
+
+cd "$PBS_O_WORKDIR"
+source env.sh
+# same caches the HPC app.py header sets, so uvicorn (which skips app.py) finds LPIPS/TruFor weights
+export TORCH_HOME=$HOME/scratch/models/hf TIMM_CACHE_DIR=$HOME/scratch/models/hf/hub
+# Poppler (PDF page pictures) + Tesseract (OCR) are not installed on the GPU node: a separate conda
+# env (conda create -p ~/scratch/tools -c conda-forge poppler tesseract), APPENDED so it never shadows python
+export PATH=$PATH:$HOME/scratch/tools/bin
+mkdir -p logs
+{ hostname; nvidia-smi -L; date; } > logs/demo_node.txt
+
+# The node has no internet. Bedrock goes out through the laptop: scripts/hpc/bedrock_proxy.py
+# + an ssh -R 3128 reverse tunnel. Wait up to 5 min for it so the startup warm-up (and the first
+# narrative) can use it; without it the servers still start and fall back to the template.
+export HTTPS_PROXY=http://127.0.0.1:3128 NO_PROXY=localhost,127.0.0.1,.bitmesra.ac.in
+for i in $(seq 60); do (exec 3<>/dev/tcp/127.0.0.1/3128) 2>/dev/null && break; sleep 5; done
+(exec 3<>/dev/tcp/127.0.0.1/3128) 2>/dev/null && echo "bedrock tunnel: up" >> logs/demo_node.txt \
+    || echo "bedrock tunnel: DOWN (template narrative only)" >> logs/demo_node.txt
+uvicorn claimshield.api:app --host 0.0.0.0 --port 8000 > logs/api.log 2>&1 &
+streamlit run claimshield/ui/app.py --server.port 8501 --server.address 0.0.0.0 \
+    --server.headless true > logs/streamlit.log 2>&1 &
+wait
