@@ -1,0 +1,20 @@
+#!/bin/bash
+#PBS -N claimshield-gen
+#PBS -q gpu
+#PBS -l ngpus=1
+#PBS -l walltime=03:00:00
+#PBS -j oe
+# GPU generation job (PBS). Submit from
+# $SCRATCH/claimshield:   qsub -o logs/ scripts/hpc/generate.pbs
+# t2i only (no seeds yet): qsub -o logs/ -v ATTACKS=t2i scripts/hpc/generate.pbs
+# Resumable: if walltime hits, submit again; finished images are skipped.
+set -euo pipefail
+SCRATCH=${SCRATCH:-$HOME/scratch}
+export HF_HOME=$SCRATCH/models/hf HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+# self-built libffi for the self-built python 3.10 on the old glibc
+export LD_LIBRARY_PATH=$HOME/libffi-3.4.6/x86_64-pc-linux-gnu/.libs:$HOME/local/lib64:$HOME/local/lib:${LD_LIBRARY_PATH:-}
+cd "$SCRATCH/claimshield"
+source .venv/bin/activate
+nvidia-smi
+python scripts/hpc/generate.py --models "${MODELS:-sd15,sdxl,flux}" \
+    --attacks "${ATTACKS:-t2i,img2img,inpaint}" --n "${N:-134}"
